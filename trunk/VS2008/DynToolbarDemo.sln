@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DynToolbarDemo", "DynToolbarDemo.vcproj", "{8B6774F8-3092-4F5F-9A8A-E3DA18C09DFA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8B6774F8-3092-4F5F-9A8A-E3DA18C09DFA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8B6774F8-3092-4F5F-9A8A-E3DA18C09DFA}.Debug|Win32.Build.0 = Debug|Win32
+		{8B6774F8-3092-4F5F-9A8A-E3DA18C09DFA}.Release|Win32.ActiveCfg = Release|Win32
+		{8B6774F8-3092-4F5F-9A8A-E3DA18C09DFA}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
