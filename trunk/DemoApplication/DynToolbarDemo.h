@@ -1,8 +1,8 @@
 // DynToolbarDemo.h : main header file for the DynTOOLBARDEMO application
 //
 
-#if !defined(AFX_DynTOOLBARDEMO_H__2686E78D_A5B1_497B_BAE6_13BA37ED565D__INCLUDED_)
-#define AFX_DynTOOLBARDEMO_H__2686E78D_A5B1_497B_BAE6_13BA37ED565D__INCLUDED_
+#if !defined(AFX_DYNTOOLBARDEMO_H__2686E78D_A5B1_497B_BAE6_13BA37ED565D__INCLUDED_)
+#define AFX_DYNTOOLBARDEMO_H__2686E78D_A5B1_497B_BAE6_13BA37ED565D__INCLUDED_
 
 #if _MSC_VER > 1000
 #pragma once
@@ -46,4 +46,4 @@ public:
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
-#endif // !defined(AFX_DynTOOLBARDEMO_H__2686E78D_A5B1_497B_BAE6_13BA37ED565D__INCLUDED_)
+#endif // !defined(AFX_DYNTOOLBARDEMO_H__2686E78D_A5B1_497B_BAE6_13BA37ED565D__INCLUDED_)

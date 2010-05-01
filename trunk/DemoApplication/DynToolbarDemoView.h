@@ -2,8 +2,8 @@
 //
 /////////////////////////////////////////////////////////////////////////////
 
-#if !defined(AFX_DynTOOLBARDEMOVIEW_H__EED1183B_C078_4E2C_AD79_1DB6572B3443__INCLUDED_)
-#define AFX_DynTOOLBARDEMOVIEW_H__EED1183B_C078_4E2C_AD79_1DB6572B3443__INCLUDED_
+#if !defined(AFX_DYNTOOLBARDEMOVIEW_H__EED1183B_C078_4E2C_AD79_1DB6572B3443__INCLUDED_)
+#define AFX_DYNTOOLBARDEMOVIEW_H__EED1183B_C078_4E2C_AD79_1DB6572B3443__INCLUDED_
 
 #if _MSC_VER > 1000
 #pragma once
@@ -64,4 +64,4 @@ inline CDynToolbarDemoDoc* CDynToolbarDemoView::GetDocument()
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
-#endif // !defined(AFX_DynTOOLBARDEMOVIEW_H__EED1183B_C078_4E2C_AD79_1DB6572B3443__INCLUDED_)
+#endif // !defined(AFX_DYNTOOLBARDEMOVIEW_H__EED1183B_C078_4E2C_AD79_1DB6572B3443__INCLUDED_)
