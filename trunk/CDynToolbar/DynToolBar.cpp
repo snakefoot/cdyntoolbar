@@ -85,6 +85,7 @@ bool CDynToolBar::AddButton(int nIdCommand, LPCTSTR lpszResourceName)
 
 namespace
 {
+	// http://www.codeproject.com/KB/graphics/Create_GrayscaleIcon.aspx
 	HICON CreateGrayscaleIcon( HICON hIcon, COLORREF* pPalette )
 	{
 		if (hIcon == NULL)
