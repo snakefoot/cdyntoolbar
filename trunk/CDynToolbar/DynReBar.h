@@ -1,5 +1,8 @@
 #pragma once
 
+class CViewConfigSection;
+class CViewConfigSectionDefault;
+
 class CDynReBar : public CReBar
 {
 public:
@@ -9,6 +12,6 @@ public:
 		LPCTSTR pszText = NULL, DWORD dwStyle = RBBS_GRIPPERALWAYS);
 
 	CToolBar* GetToolBar(int nBand);
-	void LoadState( LPCTSTR lpszProfileName );
-	void SaveState( LPCTSTR lpszProfileName );
+	void LoadState( CViewConfigSectionDefault& config );
+	void SaveState( CViewConfigSection& config );
 };

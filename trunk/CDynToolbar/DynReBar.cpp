@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "DynReBar.h"
 
-const LPCTSTR m_lpszStateInfoFormat = _T("wID=%04X,cx=%d,fStyle=%08X");
+#include "ViewConfigSection.h"
 
 BOOL CDynReBar::AddBar(CWnd* pBar, LPCTSTR pszText, CBitmap* pbmp, DWORD dwStyle)
 {
@@ -42,12 +42,14 @@ CToolBar* CDynReBar::GetToolBar(int nBand)
 	return DYNAMIC_DOWNCAST(CToolBar, CWnd::FromHandlePermanent(rbbi.hwndChild));
 }
 
-void CDynReBar::LoadState( LPCTSTR lpszProfileName )
+void CDynReBar::LoadState( CViewConfigSectionDefault& config )
 {
-	// This function restores index, width and style from the registry for
-	// each band in the rebar.
-	CString strValue = AfxGetApp()->GetProfileString( lpszProfileName, _T("CDynReBar") );
-	if ( !strValue.IsEmpty() )
+	if (!config.HasDefaultConfig())
+		SaveState(config.GetDefaultConfig());
+
+	// This function restores index, width and style for each band in the rebar.
+	int nConfigCount = config.GetIntSetting(_T("BandCount"));
+	if (nConfigCount > 0)
 	{
 		REBARBANDINFO rbbi = {0};
 		rbbi.cbSize = sizeof( rbbi );
@@ -56,22 +58,27 @@ void CDynReBar::LoadState( LPCTSTR lpszProfileName )
 		int nCount = GetReBarCtrl().GetBandCount();
 		for ( int nBand = 0; nBand < nCount; nBand++ )
 		{
-			CString strBandState;
-			VERIFY( AfxExtractSubString( strBandState, strValue, nBand, _T('\n') ) );
+			CString bandIdSetting;
+			bandIdSetting.Format(_T("BandId_%d"), nBand);
+			int nBandId = config.GetIntSetting(bandIdSetting);
 
-			UINT nID, cx, nStyle;
-			int nResult = sscanf(strBandState, m_lpszStateInfoFormat, &nID, &cx, &nStyle );
-			ASSERT( nResult == 3 );
+			CString bandPosSetting;
+			bandPosSetting.Format(_T("BandPosition_%d"), nBand);
+			int nBandPos = config.GetIntSetting(bandPosSetting);
 
-			GetReBarCtrl().MoveBand( GetReBarCtrl().IDToIndex(nID), nBand );
+			CString bandStyleSetting;
+			bandStyleSetting.Format(_T("BandStyle_%d"), nBand);
+			int nBandStyle = config.GetIntSetting(bandStyleSetting);
+
+			GetReBarCtrl().MoveBand( GetReBarCtrl().IDToIndex(nBandId), nBand );
 			VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
-			rbbi.cx     = cx;
-			rbbi.fStyle = ( rbbi.fStyle & ~( RBBS_HIDDEN | RBBS_BREAK ) ) | nStyle;
+			rbbi.cx     = nBandPos;
+			rbbi.fStyle = ( rbbi.fStyle & ~( RBBS_HIDDEN | RBBS_BREAK ) ) | nBandStyle;
 			VERIFY( GetReBarCtrl().SetBandInfo( nBand, &rbbi ) );
 
 			CToolBar* pToolBar = GetToolBar(nBand);
 
-			if (pToolBar && (nStyle & RBBS_HIDDEN))
+			if (pToolBar && (nBandStyle & RBBS_HIDDEN))
 			{
 				pToolBar->ShowWindow(SW_HIDE);
 			}
@@ -79,28 +86,34 @@ void CDynReBar::LoadState( LPCTSTR lpszProfileName )
 	}
 }
 
-void CDynReBar::SaveState( LPCTSTR lpszProfileName )
+void CDynReBar::SaveState( CViewConfigSection& config )
 {
-	// This function saves index, width and style in the registry for each
-	// band in the rebar, so that it could be possible to restore all these
-	// settings when the user runs the program next time.
-
-	CString strValue;
+	// This function saves index, width and style for each band in the rebar,
+	// so that it could be possible to restore all these settings when the
+	// user runs the program next time.
 
 	REBARBANDINFO rbbi = {0};
 	rbbi.cbSize = sizeof( rbbi );
 	rbbi.fMask  = RBBIM_STYLE | RBBIM_SIZE | RBBIM_ID;
 
 	int nCount = GetReBarCtrl().GetBandCount();
+
+	config.SetIntSetting(_T("BandCount"), nCount);
+
 	for ( int nBand = 0; nBand < nCount; nBand++ )
 	{
 		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
 
-		CString strBandState;
-		strBandState.Format( m_lpszStateInfoFormat, rbbi.wID, rbbi.cx, rbbi.fStyle );
-		strValue += ( strValue.IsEmpty() ? _T("") : _T("\n") ) + strBandState;
-	}
+		CString bandIdSetting;
+		bandIdSetting.Format(_T("BandId_%d"), nBand);
+		config.SetIntSetting(bandIdSetting, rbbi.wID);
 
-	VERIFY( AfxGetApp()->WriteProfileString( lpszProfileName,
-		_T("CDynReBar"), strValue ) );
+		CString bandPosSetting;
+		bandPosSetting.Format(_T("BandPosition_%d"), nBand);
+		config.SetIntSetting(bandPosSetting, rbbi.cx);
+
+		CString bandStyleSetting;
+		bandStyleSetting.Format(_T("BandStyle_%d"), nBand);
+		config.SetIntSetting(bandStyleSetting, rbbi.fStyle);
+	}
 }
