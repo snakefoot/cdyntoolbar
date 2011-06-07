@@ -9,7 +9,9 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "DynReBar.h"
 #include "DynToolBar.h"
+
 
 class CMainFrame : public CFrameWnd
 {
@@ -42,12 +44,13 @@ protected:  // control bar embedded members
 	CStatusBar  m_wndStatusBar;
 	CToolBar    m_wndToolBar;
 	CDynToolBar    m_wndDynToolBar;
-	CReBar      m_wndReBar;
+	CDynReBar      m_wndReBar;
 
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CMainFrame)
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnClose();
 		// NOTE - the ClassWizard will add and remove member functions here.
 		//    DO NOT EDIT what you see in these blocks of generated code!
 	//}}AFX_MSG

@@ -2,9 +2,10 @@
 //
 
 #include "stdafx.h"
-#include "DynToolbarDemo.h"
-
 #include "MainFrm.h"
+
+#include "DynToolbarDemo.h"
+#include "ViewConfigSection.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -22,6 +23,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 		// NOTE - the ClassWizard will add and remove mapping macros here.
 		//    DO NOT EDIT what you see in these blocks of generated code !
 	ON_WM_CREATE()
+	ON_WM_CLOSE()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -88,8 +90,18 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndDynToolBar.SetBarStyle(m_wndDynToolBar.GetBarStyle() |
 		CBRS_TOOLTIPS | CBRS_FLYBY);
 
+	m_wndReBar.LoadState(*new CViewConfigSectionWinApp("Hello"));
 	return 0;
 }
+
+void CMainFrame::OnClose()
+{
+	SaveBarState("ToolbarInf");
+	m_wndReBar.SaveState(*new CViewConfigSectionWinApp("Hello"));
+
+	CFrameWnd::OnClose();
+}
+
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
