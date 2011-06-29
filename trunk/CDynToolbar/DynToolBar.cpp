@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "DynToolBar.h"
 
+#include "ViewConfigSection.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -31,6 +33,9 @@ BEGIN_MESSAGE_MAP(CDynToolBar, CToolBar)
 	ON_NOTIFY_REFLECT(TBN_RESET, OnToolBarReset)
 	ON_NOTIFY_REFLECT(TBN_INITCUSTOMIZE , OnInitCustomize)
 	ON_WM_CONTEXTMENU()
+    // Saving and restoring toolbar
+    ON_NOTIFY_REFLECT( TBN_SAVE, OnSave )
+    ON_NOTIFY_REFLECT( TBN_RESTORE, OnRestore )
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -229,6 +234,100 @@ bool CDynToolBar::AddButton(TBBUTTON& tbb, HICON hIcon)
     return GetToolBarCtrl().AddButtons( 1, &tbb )!=0;
 }
 
+void CDynToolBar::SaveState(CViewConfigSection& config)
+{
+	config.RemoveCurrentConfig();	// Reset the existing config
+
+	// Skal kunne huske id for de knapper som er vist
+	int nButtons = GetToolBarCtrl().GetButtonCount();
+
+	config.SetIntSetting(_T("ButtonCount"), nButtons);
+
+	for (int i = 0; i < nButtons; i++)
+	{
+		TBBUTTON button = {0};
+		GetToolBarCtrl().GetButton(i, &button);
+
+		CString btnSetting;
+		btnSetting.Format(_T("Button_%d"), i);
+		config.SetIntSetting(btnSetting, button.idCommand);
+	}
+}
+
+void CDynToolBar::LoadState(const CViewConfigSection& config)
+{
+	SaveDefaultState();
+
+	int nSelectedButtons = config.GetIntSetting(_T("ButtonCount"));
+
+	CSimpleArray<int> selectedButtons;
+
+	for(int i = 0; i < nSelectedButtons; ++i)
+	{
+		CString btnSetting;
+		btnSetting.Format(_T("Button_%d"), i);
+		int idCommand = config.GetIntSetting(btnSetting);
+
+		for(int j = 0; j < m_AllButtons.GetSize(); ++j)
+		{
+			bool alreadySelected = false;
+			for(int n = 0; n < selectedButtons.GetSize(); ++n)
+				if (selectedButtons[n]==j)
+					alreadySelected = true;
+
+			if (alreadySelected)
+				continue;
+
+			if (m_AllButtons[j].m_ButtonInfo.idCommand == idCommand)
+			{
+				selectedButtons.Add(j);
+				break;
+			}
+		}
+	}
+
+	if (selectedButtons.GetSize()==0)
+	{
+		// If no buttons selected, then display all buttons
+		for(int j = 0; j < m_AllButtons.GetSize(); ++j)
+			selectedButtons.Add(j);
+	}
+
+	int nButtons = GetToolBarCtrl().GetButtonCount();
+	for(int k = nButtons-1; k >= 0; --k)
+		GetToolBarCtrl().DeleteButton(k);
+
+	for(int n = 0; n < selectedButtons.GetSize(); ++n)
+		GetToolBarCtrl().AddButtons(1, &m_AllButtons[ selectedButtons[n] ].m_ButtonInfo);
+
+	// Check if any buttons in the state are available
+	//	- If none then don't load the state
+	//  - How to remove buttons without loosing custom controls ?
+	//		- We need to hide / show the controls depending on their corresponding button is visible
+	//		- We need a map between button-id and control-wnd
+	//			- They should not be saved in the config class
+}
+
+void CDynToolBar::SaveDefaultState()
+{
+	if (m_AllButtons.GetSize()==0)
+	{
+		int nCount = GetToolBarCtrl().GetButtonCount();
+		for (int i=0;i<nCount;i++)
+		{
+			ButtonDetails btnDetails = {0};
+			GetToolBarCtrl().GetButton(i,&btnDetails.m_ButtonInfo);
+			CString str;
+			str.LoadString(btnDetails.m_ButtonInfo.idCommand);
+			int nPos= str.ReverseFind(_T('\n'));
+			btnDetails.m_ButtonText=str.Right(str.GetLength()-nPos-1);
+			btnDetails.m_DefaultVisible=TRUE;
+
+			m_AllButtons.Add(btnDetails);
+		}
+	}
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CDynToolBar message handlers
 #if defined(_WIN64)
@@ -254,7 +353,7 @@ int CDynToolBar::OnToolHitTest(CPoint point, TOOLINFO * pTI) const
 	for (int i = 0; i < nButtons; i++)
 	{
 		CRect rect;
-		TBBUTTON button;
+		TBBUTTON button = {0};
 		if (GetToolBarCtrl().GetItemRect(i, &rect))
 		{
 			if (rect.PtInRect(point) &&
@@ -279,20 +378,23 @@ int CDynToolBar::OnToolHitTest(CPoint point, TOOLINFO * pTI) const
 
 void CDynToolBar::OnToolBarGetButtonInfo(NMHDR* pNMHDR, LRESULT* pResult)
 {
+	SaveDefaultState();
+
 	TBNOTIFY* pTBntf = (TBNOTIFY *)pNMHDR;
-	
-	if((pTBntf->iItem>=0) && (pTBntf->iItem < GetToolBarCtrl().GetButtonCount()))
+
+	// if the index is valid
+	if ((0 <= pTBntf->iItem) && (pTBntf->iItem < m_AllButtons.GetSize()))
 	{
-		TBBUTTON button = {0};
-		GetToolBarCtrl().GetButton(pTBntf->iItem, &button);
-		pTBntf->tbButton = button;
-		CString str;
-		str.LoadString(GetItemID(pTBntf->iItem));
-		strcpy(pTBntf->pszText, str);
-		
+		// copy the stored button structure
+		pTBntf->tbButton = m_AllButtons[pTBntf->iItem].m_ButtonInfo;
+
+		// copy the text for the button label in the dialog
+		_tcscpy(pTBntf->pszText, m_AllButtons[pTBntf->iItem].m_ButtonText);
+
+		// indicate valid data was sent
 		*pResult = TRUE;
 	}
-	else
+	else  	// else there is no button for this index
 	{
 		*pResult = FALSE;
 	}
@@ -333,7 +435,8 @@ void CDynToolBar::OnToolBarQueryInsert(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CDynToolBar::OnToolBarChange(NMHDR* pNMHDR, LRESULT* pResult)
 {
-	GetParentFrame()->RecalcLayout();
+	if (GetParentFrame())
+		GetParentFrame()->RecalcLayout();
 }
 
 void CDynToolBar::OnToolBarEndAdjust(NMHDR* pNMHDR, LRESULT* pResult)
@@ -352,4 +455,37 @@ void CDynToolBar::OnInitCustomize(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	// Hide the help button in the customize dialog
 	*pResult = TBNRF_HIDEHELP;
+}
+
+void CDynToolBar::OnSave( NMHDR* pNMHDR, LRESULT* pResult )
+{
+	// Must add some dummy data, or else the toolbar will reset if restoring and only one button (DWORD) left
+    NMTBSAVE* lpnmtb = ( NMTBSAVE* )pNMHDR;
+    if ( lpnmtb->iItem == -1 )
+    {
+		lpnmtb->cbData  += sizeof( DWORD );
+		lpnmtb->pData    = ( LPDWORD )::GlobalAlloc( GMEM_FIXED, lpnmtb->cbData );
+        lpnmtb->pCurrent = lpnmtb->pData;
+
+        *lpnmtb->pCurrent++ = (DWORD)0;
+    }
+
+    *pResult = 0;
+}
+
+void CDynToolBar::OnRestore( NMHDR* pNMHDR, LRESULT* pResult )
+{
+	SaveDefaultState();
+
+    NMTBRESTORE* lpnmtb = ( NMTBRESTORE* )pNMHDR;
+
+    if ( lpnmtb->iItem == -1 )
+    {
+		lpnmtb->cButtons = lpnmtb->cbData / lpnmtb->cbBytesPerRecord;
+        lpnmtb->pCurrent = lpnmtb->pData;
+
+        lpnmtb->pCurrent++;
+    }
+
+    *pResult = 0;
 }
