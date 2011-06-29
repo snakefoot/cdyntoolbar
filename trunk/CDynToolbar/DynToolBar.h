@@ -70,6 +70,10 @@ public:
 	bool AddButton(int nIdCommand, UINT lpIconName);
 	bool AddButton(TBBUTTON& tbb, HICON hIcon);
 
+	void ReplaceButton(CWnd& wndCtrl, UINT nID);
+
+	BOOL IsVertDocked();
+
 	void SaveState(CViewConfigSection& config);
 	void LoadState(const CViewConfigSection& config);
 
@@ -93,6 +97,10 @@ protected:
 	virtual int OnToolHitTest(CPoint point, TOOLINFO * pTI) const;
 #endif
 
+	void RecalcControlPositions();
+	void RecalcControlPosition(UINT nID);
+	void SaveDefaultState();
+
 	//{{AFX_MSG(CDynToolBar)
 		// NOTE - the ClassWizard will add and remove member functions here.
 	afx_msg void OnCustomize();
@@ -112,16 +120,22 @@ protected:
 private:
 	CImageList m_ImageList;
 	CImageList m_DisabledImageList;
+	BOOL m_bHideChildWndOnVertical;
 
 	struct ButtonDetails
 	{
-		TBBUTTON		m_ButtonInfo;		// Information regarding the button
-		CString			m_ButtonText;		// Text for the button
-		BOOL			m_DefaultVisible;	// Button intially visible
+		TBBUTTON	m_ButtonInfo;		// Information regarding the button
+		CString		m_ButtonText;		// Text for the button
+		BOOL		m_DefaultVisible;	// Button intially visible
+		CWnd*		m_pButtonWnd;
 	};
 	CSimpleArray<ButtonDetails> m_AllButtons;
-
-	void SaveDefaultState();
+	struct ButtonControl
+	{
+		UINT		m_ButtonCmdId;
+		CWnd*		m_pButtonWnd;
+	};
+	CSimpleArray<ButtonControl> m_AllButtonsCtrls;
 
 	DECLARE_MESSAGE_MAP()
 };

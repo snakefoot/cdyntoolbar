@@ -14,6 +14,7 @@ static char THIS_FILE[] = __FILE__;
 
 CDynToolBar::CDynToolBar()
 {
+	m_bHideChildWndOnVertical = TRUE;
 }
 
 CDynToolBar::~CDynToolBar()
@@ -234,6 +235,93 @@ bool CDynToolBar::AddButton(TBBUTTON& tbb, HICON hIcon)
     return GetToolBarCtrl().AddButtons( 1, &tbb )!=0;
 }
 
+void CDynToolBar::ReplaceButton(CWnd& wndCtrl, UINT nID)
+{
+	ASSERT(IsWindow(wndCtrl.m_hWnd));
+
+	int nIndex = CommandToIndex( nID ) ;
+	ASSERT(nIndex >= 0);
+
+	if (nIndex < 0)
+		return;
+
+	// Set the button style for a seperator.
+	wndCtrl.SetFont( GetFont());
+	CRect rect(0,0,0,0);
+	wndCtrl.GetWindowRect(rect);
+	SetButtonInfo( nIndex, nID, TBBS_SEPARATOR, rect.Width());
+
+	ModifyStyle(0,WS_CLIPCHILDREN);
+
+	ButtonControl btnCtrl = { nID, &wndCtrl };
+	m_AllButtonsCtrls.Add(btnCtrl);
+
+	RecalcControlPosition(nID);
+}
+
+void CDynToolBar::RecalcControlPosition(UINT nID)
+{
+	CWnd* pButtonCtrl = NULL;
+	for(int i = 0; i < m_AllButtonsCtrls.GetSize(); ++i)
+	{
+		if (m_AllButtonsCtrls[i].m_ButtonCmdId == nID)
+		{
+			pButtonCtrl = m_AllButtonsCtrls[i].m_pButtonWnd;
+			break;
+		}
+	}
+
+	ASSERT(pButtonCtrl != NULL);
+	if (pButtonCtrl == NULL)
+		return;
+
+	int nIndex = CommandToIndex(nID);
+	if (nIndex < 0)
+	{
+		pButtonCtrl->ShowWindow(SW_HIDE);
+	}
+	else
+	{
+		// Stolen from http://www.codeproject.com/KB/toolbars/toolbarex.aspx by Deepak Khajuria
+		CRect itemRect;
+		GetItemRect( nIndex, &itemRect );
+		CRect rt;
+		pButtonCtrl->GetWindowRect(&rt);
+		itemRect.top+=max((itemRect.Height()-rt.Height())/2,0);	 //move to middle
+		pButtonCtrl->SetWindowPos(0, itemRect.left, itemRect.top, 0, 0,
+			SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOCOPYBITS );
+
+		BOOL bVert = IsVertDocked(); //(m_dwStyle & CBRS_ORIENT_VERT) != 0;
+
+		if (bVert && m_bHideChildWndOnVertical)
+		{
+	   		int nState=GetToolBarCtrl().GetState(nIndex);
+	   		GetToolBarCtrl().SetState(nID,(nState | TBSTATE_HIDDEN));
+			pButtonCtrl->ShowWindow( SW_HIDE );
+		}
+		else
+		{
+	   		int nState=GetToolBarCtrl().GetState(nIndex);
+	   		GetToolBarCtrl().SetState(nIndex,(nState & ~TBSTATE_HIDDEN));
+			pButtonCtrl->ShowWindow( SW_SHOW );
+		}
+	}
+}
+
+void CDynToolBar::RecalcControlPositions()
+{
+	for(int i = 0; i < m_AllButtonsCtrls.GetSize(); ++i)
+	{
+		RecalcControlPosition(m_AllButtonsCtrls[i].m_ButtonCmdId);
+	}
+}
+
+BOOL CDynToolBar::IsVertDocked()
+{
+	UINT nID =GetParent()->GetDlgCtrlID();
+	return ( (nID ==AFX_IDW_DOCKBAR_LEFT) || (nID== AFX_IDW_DOCKBAR_RIGHT));
+}
+
 void CDynToolBar::SaveState(CViewConfigSection& config)
 {
 	config.RemoveCurrentConfig();	// Reset the existing config
@@ -300,6 +388,8 @@ void CDynToolBar::LoadState(const CViewConfigSection& config)
 	for(int n = 0; n < selectedButtons.GetSize(); ++n)
 		GetToolBarCtrl().AddButtons(1, &m_AllButtons[ selectedButtons[n] ].m_ButtonInfo);
 
+	RecalcControlPositions();
+
 	// Check if any buttons in the state are available
 	//	- If none then don't load the state
 	//  - How to remove buttons without loosing custom controls ?
@@ -324,6 +414,21 @@ void CDynToolBar::SaveDefaultState()
 			btnDetails.m_DefaultVisible=TRUE;
 
 			m_AllButtons.Add(btnDetails);
+		}
+
+		for(int j=0;j< m_AllButtonsCtrls.GetSize(); ++j)
+		{
+			for(int k = 0; k < m_AllButtons.GetSize(); ++k)
+			{
+				if (m_AllButtons[k].m_ButtonInfo.idCommand == m_AllButtonsCtrls[j].m_ButtonCmdId)
+				{
+					if (m_AllButtons[k].m_pButtonWnd == NULL)
+					{
+						m_AllButtons[k].m_pButtonWnd = m_AllButtonsCtrls[j].m_pButtonWnd;
+						break;
+					}
+				}
+			}
 		}
 	}
 }
@@ -435,12 +540,14 @@ void CDynToolBar::OnToolBarQueryInsert(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CDynToolBar::OnToolBarChange(NMHDR* pNMHDR, LRESULT* pResult)
 {
+	RecalcControlPositions();
 	if (GetParentFrame())
 		GetParentFrame()->RecalcLayout();
 }
 
 void CDynToolBar::OnToolBarEndAdjust(NMHDR* pNMHDR, LRESULT* pResult)
 {
+	RecalcControlPositions();
 }
 
 void CDynToolBar::OnToolBarBeginAdjust(NMHDR* pNMHDR, LRESULT* pResult)
@@ -449,6 +556,16 @@ void CDynToolBar::OnToolBarBeginAdjust(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CDynToolBar::OnToolBarReset(NMHDR* pNMHDR, LRESULT* pResult)
 {
+	// Remove all of the existing buttons 
+	int nButtons = GetToolBarCtrl().GetButtonCount();
+	for(int k = nButtons-1; k >= 0; --k)
+		GetToolBarCtrl().DeleteButton(k);
+
+	// Restore the buttons that were saved.
+	for(int n = 0; n < m_AllButtons.GetSize(); ++n)
+		GetToolBarCtrl().AddButtons(1, &m_AllButtons[ n ].m_ButtonInfo);
+
+	RecalcControlPositions();
 }
 
 void CDynToolBar::OnInitCustomize(NMHDR* pNMHDR, LRESULT* pResult)
