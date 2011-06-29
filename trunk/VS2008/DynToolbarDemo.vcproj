@@ -182,11 +182,19 @@
 			Name="DynToolbar"
 			>
 			<File
+				RelativePath="..\CDynToolbar\DynReBar.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\CDynToolbar\DynToolBar.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\CDynToolbar\DynToolBar.h"
+				>
+			</File>
+			<File
+				RelativePath="..\CDynToolbar\ViewConfigSection.cpp"
 				>
 			</File>
 		</Filter>
@@ -265,6 +273,10 @@
 				RelativePath="..\DemoApplication\StdAfx.h"
 				>
 			</File>
+			<File
+				RelativePath="..\CDynToolbar\ViewConfigSection.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -287,10 +299,6 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath="ReadMe.txt"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
