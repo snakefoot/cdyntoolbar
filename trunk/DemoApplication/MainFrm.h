@@ -45,6 +45,7 @@ protected:  // control bar embedded members
 	CToolBar    m_wndToolBar;
 	CDynToolBar    m_wndDynToolBar;
 	CDynReBar      m_wndReBar;
+	CComboBox	m_wndComboBox;
 
 // Generated message map functions
 protected:

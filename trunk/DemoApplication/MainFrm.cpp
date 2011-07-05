@@ -53,20 +53,31 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
 		return -1;
 	
-	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_TRANSPARENT) ||
+	if (!m_wndToolBar.CreateEx(this, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT) ||
 		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create toolbar\n");
 		return -1;      // fail to create
 	}
-	
-	if (!m_wndDynToolBar.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_TRANSPARENT) ||
+
+	if (!m_wndDynToolBar.CreateEx(this, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT | CCS_ADJUSTABLE) ||
 		!m_wndDynToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create Dyn toolbar\n");
 		return -1;      // fail to create
 	}
 	
+	// TODO: Delete these three lines if you don't want the toolbar to
+	//  be dockable
+	if(!m_wndComboBox.Create(CBS_DROPDOWN | CBS_SORT | WS_VISIBLE |
+		WS_TABSTOP | WS_VSCROLL, CRect(0,0,100,120), &m_wndDynToolBar, ID_FILE_NEW))
+	{
+		TRACE(_T("Failed to create combo-box\n"));
+		return FALSE;
+	}
+
+	m_wndDynToolBar.ReplaceButton(m_wndComboBox, ID_FILE_NEW);
+
 	if (!m_wndReBar.Create(this) ||
 		!m_wndReBar.AddBar(&m_wndToolBar, "Original MFC Toolbar") ||
 		!m_wndReBar.AddBar(&m_wndDynToolBar, "Dyn Toolbar", NULL, RBBS_GRIPPERALWAYS | RBBS_BREAK)
@@ -90,14 +101,25 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndDynToolBar.SetBarStyle(m_wndDynToolBar.GetBarStyle() |
 		CBRS_TOOLTIPS | CBRS_FLYBY);
 
-	m_wndReBar.LoadState(*new CViewConfigSectionWinApp("Hello"));
+	//LoadBarState("ToolbarInf");
+	//m_wndDynToolBar.GetToolBarCtrl().RestoreState(HKEY_CURRENT_USER, _T("Software\\Local AppWizard-Generated Applications\\DynToolbarDemo"), _T("BarState"));
+
+	CViewConfigSectionWinApp dynToolBarState("DynToolBar");
+	m_wndDynToolBar.LoadState(dynToolBarState);
+	CViewConfigSectionWinApp dynReBarState("DynReBar");
+	m_wndReBar.LoadState(dynReBarState);
 	return 0;
 }
 
 void CMainFrame::OnClose()
 {
-	SaveBarState("ToolbarInf");
-	m_wndReBar.SaveState(*new CViewConfigSectionWinApp("Hello"));
+	//SaveBarState("ToolbarInf");
+	//m_wndDynToolBar.GetToolBarCtrl().SaveState(HKEY_CURRENT_USER, _T("Software\\Local AppWizard-Generated Applications\\DynToolbarDemo"), _T("BarState"));
+
+	CViewConfigSectionWinApp dynToolBarState("DynToolBar");
+	m_wndDynToolBar.SaveState(dynToolBarState);
+	CViewConfigSectionWinApp dynReBarState("DynReBar");
+	m_wndReBar.SaveState(dynReBarState);
 
 	CFrameWnd::OnClose();
 }
