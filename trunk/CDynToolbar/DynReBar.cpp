@@ -42,11 +42,11 @@ void CDynReBar::OnContextMenu(CWnd* pWnd, CPoint point)
 		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
 		if (rbbi.fStyle & RBBS_HIDDEN)
 		{
-			ShowBand(nBand, TRUE);
+			GetReBarCtrl().ShowBand(nBand, TRUE);
 		}
 		else
 		{
-			ShowBand(nBand, FALSE);
+			GetReBarCtrl().ShowBand(nBand, FALSE);
 		}
 	}
 }
@@ -77,35 +77,6 @@ BOOL CDynReBar::AddBar(CWnd* pBar, COLORREF clrFore, COLORREF clrBack, LPCTSTR p
 	rbbi.wID = GetReBarCtrl().GetBandCount()-1;
 	VERIFY( GetReBarCtrl().SetBandInfo(GetReBarCtrl().GetBandCount()-1, &rbbi) );
 	return TRUE;
-}
-
-BOOL CDynReBar::ShowBand(int nBand, BOOL bShow)
-{
-	REBARBANDINFO rbbi = {0};
-	rbbi.cbSize = sizeof(REBARBANDINFO);
-	rbbi.fMask = RBBIM_STYLE | RBBIM_CHILD;
-	if (GetReBarCtrl().GetBandInfo(nBand, &rbbi)==FALSE)
-		return FALSE;
-
-	CWnd* pBandWnd = CWnd::FromHandlePermanent(rbbi.hwndChild);
-
-	if (bShow)
-	{
-		if (pBandWnd)
-			pBandWnd->ShowWindow(SW_SHOW);		
-
-		rbbi.fStyle &= ~RBBS_HIDDEN;
-
-	}
-	else
-	{
-		if (pBandWnd)
-			pBandWnd->ShowWindow(SW_HIDE);
-
-		rbbi.fStyle |= RBBS_HIDDEN;
-	}
-
-	return GetReBarCtrl().SetBandInfo(nBand, &rbbi);
 }
 
 CToolBar* CDynReBar::GetToolBar(int nBand)
@@ -191,5 +162,42 @@ void CDynReBar::SaveState( CViewConfigSection& config )
 		CString bandStyleSetting;
 		bandStyleSetting.Format(_T("BandStyle_%d"), nBand);
 		config.SetIntSetting(bandStyleSetting, rbbi.fStyle);
+	}
+}
+
+CSize CDynReBar::CalcFixedLayout(BOOL bStretch, BOOL bHorz)
+{
+	RecalcLayout();	// Synchronize with min-size of bands added
+	return CReBar::CalcFixedLayout(bStretch, bHorz);
+}
+
+void CDynReBar::RecalcLayout()
+{
+	REBARBANDINFO rbbi = {0};
+	rbbi.cbSize = sizeof( rbbi );
+	rbbi.fMask  = RBBIM_ID | RBBIM_CHILDSIZE | RBBIM_CHILD | RBBIM_SIZE;
+
+	int nCount = GetReBarCtrl().GetBandCount();
+
+	for ( int nBand = 0; nBand < nCount; nBand++ )
+	{
+		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
+
+		CSize size;
+		CControlBar* pPar = DYNAMIC_DOWNCAST(CControlBar, CWnd::FromHandlePermanent(rbbi.hwndChild));
+		if (pPar != NULL)
+		{
+			size = pPar->CalcFixedLayout(FALSE, m_dwStyle & CBRS_ORIENT_HORZ);   
+			if (size.cx != rbbi.cxMinChild || size.cy != rbbi.cyMinChild)
+			{
+				rbbi.cxMinChild = size.cx;
+				rbbi.cyMinChild = size.cy;
+				
+				if (rbbi.cxMinChild > rbbi.cx)
+					rbbi.cx = rbbi.cxMinChild;
+
+				VERIFY( GetReBarCtrl().SetBandInfo( nBand, &rbbi ) );
+			}
+		}
 	}
 }
