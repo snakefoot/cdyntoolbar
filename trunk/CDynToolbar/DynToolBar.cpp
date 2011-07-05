@@ -245,7 +245,7 @@ void CDynToolBar::ReplaceButton(CWnd& wndCtrl, UINT nID)
 	if (nIndex < 0)
 		return;
 
-	// Set the button style for a seperator.
+	// Set the button style for a seperator with a certain width
 	wndCtrl.SetFont( GetFont());
 	CRect rect(0,0,0,0);
 	wndCtrl.GetWindowRect(rect);
@@ -389,6 +389,8 @@ void CDynToolBar::LoadState(const CViewConfigSection& config)
 		GetToolBarCtrl().AddButtons(1, &m_AllButtons[ selectedButtons[n] ].m_ButtonInfo);
 
 	RecalcControlPositions();
+	if (GetParentFrame())
+		GetParentFrame()->RecalcLayout();
 
 	// Check if any buttons in the state are available
 	//	- If none then don't load the state
@@ -548,6 +550,8 @@ void CDynToolBar::OnToolBarChange(NMHDR* pNMHDR, LRESULT* pResult)
 void CDynToolBar::OnToolBarEndAdjust(NMHDR* pNMHDR, LRESULT* pResult)
 {
 	RecalcControlPositions();
+	if (GetParentFrame())
+		GetParentFrame()->RecalcLayout();
 }
 
 void CDynToolBar::OnToolBarBeginAdjust(NMHDR* pNMHDR, LRESULT* pResult)
@@ -566,6 +570,8 @@ void CDynToolBar::OnToolBarReset(NMHDR* pNMHDR, LRESULT* pResult)
 		GetToolBarCtrl().AddButtons(1, &m_AllButtons[ n ].m_ButtonInfo);
 
 	RecalcControlPositions();
+	if (GetParentFrame())
+		GetParentFrame()->RecalcLayout();
 }
 
 void CDynToolBar::OnInitCustomize(NMHDR* pNMHDR, LRESULT* pResult)
