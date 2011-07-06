@@ -23,6 +23,7 @@ protected:
 	//{{AFX_MSG(CDynReBar)
 		// NOTE - the ClassWizard will add and remove member functions here.
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
+	afx_msg BOOL OnChevronPushed(NMHDR *pNMHDR, LRESULT *pResult);
 	//}}AFX_MSG
 
 private:

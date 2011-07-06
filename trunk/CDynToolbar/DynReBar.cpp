@@ -7,49 +7,11 @@ BEGIN_MESSAGE_MAP(CDynReBar, CReBar)
 	//{{AFX_MSG_MAP(CDynReBar)
 		// NOTE - the ClassWizard will add and remove mapping macros here.
 	ON_WM_CONTEXTMENU()
+	ON_NOTIFY_REFLECT_EX(RBN_CHEVRONPUSHED, OnChevronPushed)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-void CDynReBar::OnContextMenu(CWnd* pWnd, CPoint point) 
-{
-	CMenu menu;
-	VERIFY( menu.CreatePopupMenu() );
-
-	TCHAR pText[256] = {0};
-	REBARBANDINFO rbbi = {0};
-	rbbi.cbSize = sizeof( rbbi );
-	rbbi.fMask  = RBBIM_TEXT | RBBIM_ID | RBBIM_STYLE;
-	rbbi.lpText = pText;
-	rbbi.cch = _countof(pText)-1;
-
-	int nCount = GetReBarCtrl().GetBandCount();
-	for ( int nBand = 0; nBand < nCount; nBand++ )
-	{
-		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
-
-		UINT nFlags = MF_STRING;
-		if (rbbi.fStyle & RBBS_HIDDEN)
-			nFlags |= MF_UNCHECKED;
-		else
-			nFlags |= MF_CHECKED;
-		menu.AppendMenu(nFlags, nBand+1, rbbi.lpText);
-	}
-	int nResult = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_RETURNCMD,point.x,point.y,this);
-	if (nResult > 0)
-	{
-		int nBand = nResult-1;
-
-		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
-		if (rbbi.fStyle & RBBS_HIDDEN)
-		{
-			GetReBarCtrl().ShowBand(nBand, TRUE);
-		}
-		else
-		{
-			GetReBarCtrl().ShowBand(nBand, FALSE);
-		}
-	}
-}
+#define REBARBANDINFO_SIZE CCSIZEOF_STRUCT(REBARBANDINFO, cxHeader)	// Use V5 size even if compiling for Vista/Win7
 
 BOOL CDynReBar::AddBar(CWnd* pBar, LPCTSTR pszText, CBitmap* pbmp, DWORD dwStyle)
 {
@@ -58,8 +20,15 @@ BOOL CDynReBar::AddBar(CWnd* pBar, LPCTSTR pszText, CBitmap* pbmp, DWORD dwStyle
 
 	// Give the toolbar a unique id (Order of how they are added)
 	REBARBANDINFO rbbi = {0};
-	rbbi.cbSize = sizeof(rbbi);
+	rbbi.cbSize = REBARBANDINFO_SIZE;
 	rbbi.fMask = RBBIM_ID;
+	if (dwStyle & RBBS_USECHEVRON)
+	{
+		rbbi.fMask |= RBBIM_CHILDSIZE | RBBIM_IDEALSIZE;
+		VERIFY( GetReBarCtrl().GetBandInfo(GetReBarCtrl().GetBandCount()-1, &rbbi) );
+		rbbi.cxIdeal = rbbi.cxMinChild;
+		rbbi.cxMinChild = 0;
+	}
 	rbbi.wID = GetReBarCtrl().GetBandCount()-1;
 	VERIFY( GetReBarCtrl().SetBandInfo(GetReBarCtrl().GetBandCount()-1, &rbbi) );
 	return TRUE;
@@ -72,8 +41,15 @@ BOOL CDynReBar::AddBar(CWnd* pBar, COLORREF clrFore, COLORREF clrBack, LPCTSTR p
 
 	// Give the toolbar a unique id (Order of how they are added)
 	REBARBANDINFO rbbi = {0};
-	rbbi.cbSize = sizeof(rbbi);
+	rbbi.cbSize = REBARBANDINFO_SIZE;
 	rbbi.fMask = RBBIM_ID;
+	if (dwStyle & RBBS_USECHEVRON)
+	{
+		rbbi.fMask |= RBBIM_CHILDSIZE | RBBIM_IDEALSIZE;
+		VERIFY( GetReBarCtrl().GetBandInfo(GetReBarCtrl().GetBandCount()-1, &rbbi) );
+		rbbi.cxIdeal = rbbi.cxMinChild;
+		rbbi.cxMinChild = 0;
+	}
 	rbbi.wID = GetReBarCtrl().GetBandCount()-1;
 	VERIFY( GetReBarCtrl().SetBandInfo(GetReBarCtrl().GetBandCount()-1, &rbbi) );
 	return TRUE;
@@ -82,7 +58,7 @@ BOOL CDynReBar::AddBar(CWnd* pBar, COLORREF clrFore, COLORREF clrBack, LPCTSTR p
 CToolBar* CDynReBar::GetToolBar(int nBand)
 {
 	REBARBANDINFO rbbi = {0};
-	rbbi.cbSize = sizeof(rbbi);
+	rbbi.cbSize = REBARBANDINFO_SIZE;
 	rbbi.fMask = RBBIM_CHILD|RBBIM_STYLE|RBBIM_SIZE;
 
 	VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
@@ -100,7 +76,7 @@ void CDynReBar::LoadState( CViewConfigSectionDefault& config )
 	if (nConfigCount > 0)
 	{
 		REBARBANDINFO rbbi = {0};
-		rbbi.cbSize = sizeof( rbbi );
+		rbbi.cbSize = REBARBANDINFO_SIZE;
 		rbbi.fMask  = RBBIM_STYLE | RBBIM_SIZE | RBBIM_ID | RBBIM_CHILD;
 
 		int nCount = GetReBarCtrl().GetBandCount();
@@ -124,11 +100,8 @@ void CDynReBar::LoadState( CViewConfigSectionDefault& config )
 			rbbi.fStyle = ( rbbi.fStyle & ~( RBBS_HIDDEN | RBBS_BREAK ) ) | nBandStyle;
 			VERIFY( GetReBarCtrl().SetBandInfo( nBand, &rbbi ) );
 
-			CWnd* pBandWnd = CWnd::FromHandlePermanent(rbbi.hwndChild);
-			if (pBandWnd && (nBandStyle & RBBS_HIDDEN))
-			{
-				pBandWnd->ShowWindow(SW_HIDE);
-			}
+			if (nBandStyle & RBBS_HIDDEN)
+				GetReBarCtrl().ShowBand(nBand, FALSE);
 		}
 	}
 }
@@ -140,7 +113,7 @@ void CDynReBar::SaveState( CViewConfigSection& config )
 	// user runs the program next time.
 
 	REBARBANDINFO rbbi = {0};
-	rbbi.cbSize = sizeof( rbbi );
+	rbbi.cbSize = REBARBANDINFO_SIZE;
 	rbbi.fMask  = RBBIM_STYLE | RBBIM_SIZE | RBBIM_ID;
 
 	int nCount = GetReBarCtrl().GetBandCount();
@@ -174,8 +147,8 @@ CSize CDynReBar::CalcFixedLayout(BOOL bStretch, BOOL bHorz)
 void CDynReBar::RecalcLayout()
 {
 	REBARBANDINFO rbbi = {0};
-	rbbi.cbSize = sizeof( rbbi );
-	rbbi.fMask  = RBBIM_ID | RBBIM_CHILDSIZE | RBBIM_CHILD | RBBIM_SIZE;
+	rbbi.cbSize = REBARBANDINFO_SIZE;
+	rbbi.fMask  = RBBIM_ID | RBBIM_CHILDSIZE | RBBIM_CHILD | RBBIM_SIZE | RBBIM_STYLE | RBBIM_IDEALSIZE;
 
 	int nCount = GetReBarCtrl().GetBandCount();
 
@@ -190,14 +163,69 @@ void CDynReBar::RecalcLayout()
 			size = pPar->CalcFixedLayout(FALSE, m_dwStyle & CBRS_ORIENT_HORZ);   
 			if (size.cx != rbbi.cxMinChild || size.cy != rbbi.cyMinChild)
 			{
-				rbbi.cxMinChild = size.cx;
-				rbbi.cyMinChild = size.cy;
-				
-				if (rbbi.cxMinChild > rbbi.cx)
-					rbbi.cx = rbbi.cxMinChild;
+				if (rbbi.fStyle & RBBS_USECHEVRON)
+				{
+					rbbi.cxIdeal = size.cx;
+				}
+				else
+				{
+					rbbi.cxMinChild = size.cx;
+					rbbi.cyMinChild = size.cy;
+
+					if (rbbi.cxMinChild > rbbi.cx)
+						rbbi.cx = rbbi.cxMinChild;
+				}
 
 				VERIFY( GetReBarCtrl().SetBandInfo( nBand, &rbbi ) );
 			}
 		}
 	}
+}
+
+void CDynReBar::OnContextMenu(CWnd* pWnd, CPoint point) 
+{
+	CMenu menu;
+	VERIFY( menu.CreatePopupMenu() );
+
+	TCHAR pText[256] = {0};
+	REBARBANDINFO rbbi = {0};
+	rbbi.cbSize = REBARBANDINFO_SIZE;
+	rbbi.fMask  = RBBIM_TEXT | RBBIM_ID | RBBIM_STYLE;
+	rbbi.lpText = pText;
+	rbbi.cch = _countof(pText)-1;
+
+	int nCount = GetReBarCtrl().GetBandCount();
+	for ( int nBand = 0; nBand < nCount; nBand++ )
+	{
+		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
+
+		UINT nFlags = MF_STRING;
+		if (rbbi.fStyle & RBBS_HIDDEN)
+			nFlags |= MF_UNCHECKED;
+		else
+			nFlags |= MF_CHECKED;
+		menu.AppendMenu(nFlags, nBand+1, rbbi.lpText);
+	}
+	int nResult = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_RETURNCMD,point.x,point.y,this);
+	if (nResult > 0)
+	{
+		int nBand = nResult-1;
+
+		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
+		if (rbbi.fStyle & RBBS_HIDDEN)
+		{
+			GetReBarCtrl().ShowBand(nBand, TRUE);
+		}
+		else
+		{
+			GetReBarCtrl().ShowBand(nBand, FALSE);
+		}
+	}
+}
+
+BOOL CDynReBar::OnChevronPushed(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	NMREBARCHEVRON* pRebarChevron = reinterpret_cast<NMREBARCHEVRON*>(pNMHDR);
+
+	return FALSE;	// Let parent-dialog get chance
 }
