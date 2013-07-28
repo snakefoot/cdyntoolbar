@@ -11,6 +11,9 @@ public:
 	BOOL AddBar(CWnd* pBar, COLORREF clrFore, COLORREF clrBack,
 		LPCTSTR pszText = NULL, DWORD dwStyle = RBBS_GRIPPERALWAYS);
 
+	void Lock( BOOL bLock = TRUE );
+	BOOL IsLocked() const;
+
 	CToolBar* GetToolBar(int nBand);
 	void LoadState( CViewConfigSectionDefault& config );
 	void SaveState( CViewConfigSection& config );

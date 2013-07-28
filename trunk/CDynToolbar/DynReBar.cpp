@@ -66,6 +66,53 @@ CToolBar* CDynReBar::GetToolBar(int nBand)
 	return DYNAMIC_DOWNCAST(CToolBar, CWnd::FromHandlePermanent(rbbi.hwndChild));
 }
 
+void CDynReBar::Lock( BOOL bLock)
+{
+	REBARBANDINFO rbbi = {0};
+	rbbi.cbSize = REBARBANDINFO_SIZE;
+	rbbi.fMask  = RBBIM_STYLE | RBBIM_ID;
+	
+	int nCount = GetReBarCtrl().GetBandCount();
+	for ( int nBand = 0; nBand < nCount; nBand++ )
+	{
+		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
+
+		if ( bLock )
+		{
+			rbbi.fStyle &= ~RBBS_GRIPPERALWAYS;
+			rbbi.fStyle |= RBBS_NOGRIPPER;
+		}
+		else
+		{
+			rbbi.fStyle |= RBBS_GRIPPERALWAYS;
+			rbbi.fStyle &= ~RBBS_NOGRIPPER;
+		}
+
+		VERIFY( GetReBarCtrl().SetBandInfo( nBand, &rbbi ) );
+	}
+
+	RecalcLayout();
+}
+
+BOOL CDynReBar::IsLocked() const
+{
+	REBARBANDINFO rbbi = {0};
+	rbbi.cbSize = REBARBANDINFO_SIZE;
+	rbbi.fMask  = RBBIM_STYLE | RBBIM_ID;
+	
+	int nCount = GetReBarCtrl().GetBandCount();
+	for ( int nBand = 0; nBand < nCount; nBand++ )
+	{
+		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
+
+		if ((rbbi.fStyle & RBBS_NOGRIPPER) != RBBS_NOGRIPPER && (rbbi.fStyle & RBBS_GRIPPERALWAYS) == RBBS_GRIPPERALWAYS)
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 void CDynReBar::LoadState( CViewConfigSectionDefault& config )
 {
 	if (!config.HasDefaultConfig())
@@ -204,21 +251,36 @@ void CDynReBar::OnContextMenu(CWnd* pWnd, CPoint point)
 			nFlags |= MF_UNCHECKED;
 		else
 			nFlags |= MF_CHECKED;
-		menu.AppendMenu(nFlags, nBand+1, rbbi.lpText);
+		VERIFY( menu.AppendMenu(nFlags, nBand+1, rbbi.lpText) );
 	}
+
+	if (IsLocked())
+		VERIFY( menu.AppendMenu(MF_STRING, nCount+2, _T("Lock")) );
+	else
+		VERIFY( menu.AppendMenu(MF_STRING, nCount+1, _T("Unlock")) );
+
 	int nResult = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_RETURNCMD,point.x,point.y,this);
 	if (nResult > 0)
 	{
 		int nBand = nResult-1;
-
-		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
-		if (rbbi.fStyle & RBBS_HIDDEN)
+		if (nBand < nCount)
 		{
-			GetReBarCtrl().ShowBand(nBand, TRUE);
+			VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
+			if (rbbi.fStyle & RBBS_HIDDEN)
+			{
+				VERIFY( GetReBarCtrl().ShowBand(nBand, TRUE) );
+			}
+			else
+			{
+				VERIFY( GetReBarCtrl().ShowBand(nBand, FALSE) );
+			}
 		}
 		else
 		{
-			GetReBarCtrl().ShowBand(nBand, FALSE);
+			if (nResult==nCount+1)
+				Lock(FALSE);
+			else
+				Lock();
 		}
 	}
 }
@@ -226,6 +288,16 @@ void CDynReBar::OnContextMenu(CWnd* pWnd, CPoint point)
 BOOL CDynReBar::OnChevronPushed(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	NMREBARCHEVRON* pRebarChevron = reinterpret_cast<NMREBARCHEVRON*>(pNMHDR);
+
+	CToolBar* pToolBar = GetToolBar(pRebarChevron->uBand);
+	if (pToolBar==NULL)
+		return FALSE;
+
+	// Display a vertical floating toolbar with text-labels
+	//	- Allows reuse of bitmaps
+	//	- Allows click-events to flow to the main window
+	//	- Let the toolbar close itself when loosing focus
+	//  - Copy CToolBarPopup from SizeableRebar_demo
 
 	return FALSE;	// Let parent-dialog get chance
 }
