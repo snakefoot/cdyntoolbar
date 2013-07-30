@@ -10,7 +10,14 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#pragma warning( push, 1 )
+
 #define VC_EXTRALEAN		// Exclude rarely-used stuff from Windows headers
+
+#if _MSC_VER >= 1400
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#define _WIN32_WINNT 0x0501
+#endif
 
 #include <afxwin.h>         // MFC core and standard components
 #include <afxext.h>         // MFC extensions
@@ -20,11 +27,13 @@
 #include <afxcmn.h>			// MFC support for Windows Common Controls
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
+#include <atlbase.h>
 
-#if _MSC_VER >= 1400
-#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-#endif
+#pragma warning( pop )
 
+// Fixes Level 4 warnings
+#undef ASSERT
+#define ASSERT(f)          DEBUG_ONLY((void) ((f) || !::AfxAssertFailedLine(THIS_FILE, __LINE__) || (AfxDebugBreak(), 0)))
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
