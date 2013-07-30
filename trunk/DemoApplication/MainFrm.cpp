@@ -52,14 +52,14 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
 		return -1;
 	
-	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC /*| CBRS_GRIPPER*/) ||
+	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_TRANSPARENT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC /*| CBRS_GRIPPER*/) ||
 		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create toolbar\n");
 		return -1;      // fail to create
 	}
 
-	if (!m_wndDynToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC| CCS_ADJUSTABLE /*| CBRS_GRIPPER*/) ||
+	if (!m_wndDynToolBar.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_TRANSPARENT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC| CCS_ADJUSTABLE /*| CBRS_GRIPPER*/) ||
 		!m_wndDynToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create Dyn toolbar\n");
@@ -72,7 +72,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE(_T("Failed to create combo-box\n"));
 		return FALSE;
 	}
-
+	
 	m_wndDynToolBar.ReplaceButton(m_wndComboBox, ID_FILE_NEW);
 	if (!m_wndReBar.Create(this) ||
 		!m_wndReBar.AddBar(&m_wndToolBar, "Original MFC Toolbar") ||
@@ -90,7 +90,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE0("Failed to create status bar\n");
 		return -1;      // fail to create
 	}
-
+	
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	m_wndDynToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	EnableDocking(CBRS_ALIGN_ANY);
