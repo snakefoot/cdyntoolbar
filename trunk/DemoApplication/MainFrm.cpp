@@ -41,7 +41,6 @@ static UINT indicators[] =
 CMainFrame::CMainFrame()
 {
 	// TODO: add member initialization code here
-	
 }
 
 CMainFrame::~CMainFrame()
@@ -53,14 +52,14 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
 		return -1;
 	
-	if (!m_wndToolBar.CreateEx(this, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT) ||
+	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC /*|CBRS_GRIPPER*/) ||
 		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create toolbar\n");
 		return -1;      // fail to create
 	}
 
-	if (!m_wndDynToolBar.CreateEx(this, WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT | CCS_ADJUSTABLE) ||
+	if (!m_wndDynToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC| CCS_ADJUSTABLE  /*|CBRS_GRIPPER*/) ||
 		!m_wndDynToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create Dyn toolbar\n");
@@ -77,10 +76,9 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 
 	m_wndDynToolBar.ReplaceButton(m_wndComboBox, ID_FILE_NEW);
-
 	if (!m_wndReBar.Create(this) ||
 		!m_wndReBar.AddBar(&m_wndToolBar, "Original MFC Toolbar") ||
-		!m_wndReBar.AddBar(&m_wndDynToolBar, "Dyn Toolbar", NULL, RBBS_GRIPPERALWAYS | RBBS_BREAK)
+		!m_wndReBar.AddBar(&m_wndDynToolBar, "Dyn Toolbar", NULL, RBBS_GRIPPERALWAYS | RBBS_BREAK | RBBS_USECHEVRON)
 		)
 	{
 		TRACE0("Failed to create rebar\n");
@@ -95,11 +93,11 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // fail to create
 	}
 
-	// TODO: Remove this if you don't want tool tips
-	m_wndToolBar.SetBarStyle(m_wndToolBar.GetBarStyle() |
-		CBRS_TOOLTIPS | CBRS_FLYBY);
-	m_wndDynToolBar.SetBarStyle(m_wndDynToolBar.GetBarStyle() |
-		CBRS_TOOLTIPS | CBRS_FLYBY);
+	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
+	m_wndDynToolBar.EnableDocking(CBRS_ALIGN_ANY);
+	EnableDocking(CBRS_ALIGN_ANY);
+	//DockControlBar(&m_wndToolBar);
+	//DockControlBar(&m_wndDynToolBar);
 
 	//LoadBarState("ToolbarInf");
 	//m_wndDynToolBar.GetToolBarCtrl().RestoreState(HKEY_CURRENT_USER, _T("Software\\Local AppWizard-Generated Applications\\DynToolbarDemo"), _T("BarState"));
