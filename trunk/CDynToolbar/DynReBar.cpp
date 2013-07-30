@@ -105,7 +105,7 @@ BOOL CDynReBar::IsLocked() const
 	{
 		VERIFY( GetReBarCtrl().GetBandInfo( nBand, &rbbi ) );
 
-		if ((rbbi.fStyle & RBBS_NOGRIPPER) != RBBS_NOGRIPPER && (rbbi.fStyle & RBBS_GRIPPERALWAYS) == RBBS_GRIPPERALWAYS)
+		if ((rbbi.fStyle & RBBS_NOGRIPPER) == RBBS_NOGRIPPER && (rbbi.fStyle & RBBS_GRIPPERALWAYS) != RBBS_GRIPPERALWAYS)
 		{
 			return TRUE;
 		}
@@ -254,10 +254,12 @@ void CDynReBar::OnContextMenu(CWnd* pWnd, CPoint point)
 		VERIFY( menu.AppendMenu(nFlags, nBand+1, rbbi.lpText) );
 	}
 
+	VERIFY( menu.AppendMenu(MF_SEPARATOR) );
+
 	if (IsLocked())
-		VERIFY( menu.AppendMenu(MF_STRING, nCount+2, _T("Lock")) );
+		VERIFY( menu.AppendMenu(MF_STRING | MF_CHECKED, nCount+2, _T("Locked")) );
 	else
-		VERIFY( menu.AppendMenu(MF_STRING, nCount+1, _T("Unlock")) );
+		VERIFY( menu.AppendMenu(MF_STRING | MF_UNCHECKED, nCount+1, _T("Locked")) );
 
 	int nResult = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_RETURNCMD,point.x,point.y,this);
 	if (nResult > 0)
@@ -278,9 +280,9 @@ void CDynReBar::OnContextMenu(CWnd* pWnd, CPoint point)
 		else
 		{
 			if (nResult==nCount+1)
-				Lock(FALSE);
-			else
 				Lock();
+			else
+				Lock(FALSE);
 		}
 	}
 }
