@@ -52,22 +52,20 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
 		return -1;
 	
-	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC /*|CBRS_GRIPPER*/) ||
+	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC /*| CBRS_GRIPPER*/) ||
 		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create toolbar\n");
 		return -1;      // fail to create
 	}
 
-	if (!m_wndDynToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC| CCS_ADJUSTABLE  /*|CBRS_GRIPPER*/) ||
+	if (!m_wndDynToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC| CCS_ADJUSTABLE /*| CBRS_GRIPPER*/) ||
 		!m_wndDynToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create Dyn toolbar\n");
 		return -1;      // fail to create
 	}
 	
-	// TODO: Delete these three lines if you don't want the toolbar to
-	//  be dockable
 	if(!m_wndComboBox.Create(CBS_DROPDOWN | CBS_SORT | WS_VISIBLE |
 		WS_TABSTOP | WS_VSCROLL, CRect(0,0,100,120), &m_wndDynToolBar, ID_FILE_NEW))
 	{
@@ -96,8 +94,10 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	m_wndDynToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	EnableDocking(CBRS_ALIGN_ANY);
-	//DockControlBar(&m_wndToolBar);
-	//DockControlBar(&m_wndDynToolBar);
+	/*
+	DockControlBar(&m_wndToolBar);
+	DockControlBar(&m_wndDynToolBar);
+	*/
 
 	//LoadBarState("ToolbarInf");
 	//m_wndDynToolBar.GetToolBarCtrl().RestoreState(HKEY_CURRENT_USER, _T("Software\\Local AppWizard-Generated Applications\\DynToolbarDemo"), _T("BarState"));
